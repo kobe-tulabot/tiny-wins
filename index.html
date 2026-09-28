@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tiny Wins</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#33492F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tiny Wins">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<style>
+  :root{
+    --bg:#F7F5F0;
+    --ink:#1F2A1F;
+    --moss:#4A6B4A;
+    --moss-dark:#33492F;
+    --line:#DCD8CC;
+    --card:#FFFFFF;
+    --muted:#7A7568;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#181B16;
+      --ink:#ECE7DA;
+      --moss:#8FB88F;
+      --moss-dark:#A9CBA9;
+      --line:#31352C;
+      --card:#20241D;
+      --muted:#8C8878;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#181B16;
+    --ink:#ECE7DA;
+    --moss:#8FB88F;
+    --moss-dark:#A9CBA9;
+    --line:#31352C;
+    --card:#20241D;
+    --muted:#8C8878;
+  }
+  html{scroll-padding-top: env(safe-area-inset-top, 0px);}
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  .wrap{
+    width:100%;
+    max-width:480px;
+    padding:32px 20px 60px;
+  }
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:26px;
+    font-weight:650;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .date{
+    color:var(--muted);
+    font-size:14px;
+  }
+  .sub{
+    color:var(--muted);
+    font-size:14px;
+    margin:0 0 24px;
+  }
+  .add-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:28px;
+  }
+  .add-row input{
+    flex:1;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:15px;
+    color:var(--ink);
+  }
+  .add-row input:focus{
+    outline:2px solid var(--moss);
+    outline-offset:1px;
+  }
+  .add-row button{
+    background:var(--moss-dark);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:0 18px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .add-row button:hover{ background:var(--moss); }
+  .list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .habit{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+  }
+  .check{
+    width:26px;
+    height:26px;
+    flex:none;
+    border-radius:50%;
+    border:2px solid var(--moss);
+    background:transparent;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .check svg{ width:14px; height:14px; opacity:0; transition:opacity .1s ease; }
+  .habit.done .check{ background:var(--moss-dark); border-color:var(--moss-dark); }
+  .habit.done .check svg{ opacity:1; }
+  .check:active{ transform:scale(0.92); }
+  .info{ flex:1; min-width:0; }
+  .name{
+    font-size:15.5px;
+    font-weight:500;
+  }
+  .habit.done .name{ color:var(--muted); text-decoration:line-through; }
+  .streak{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+  .del{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+    padding:4px;
+  }
+  .del:hover{ color:var(--ink); }
+  .empty{
+    text-align:center;
+    color:var(--muted);
+    font-size:14px;
+    padding:40px 10px;
+    border:1px dashed var(--line);
+    border-radius:12px;
+  }
+  .footer{
+    margin-top:28px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Tiny Wins</h1>
+    <span class="date" id="today"></span>
+  </header>
+  <p class="sub">One tap a day. Small habits, kept small.</p>
+
+  <div class="add-row">
+    <input id="newHabit" type="text" placeholder="e.g. Floss, 1 pushup, drink water" maxlength="60">
+    <button id="addBtn">Add</button>
+  </div>
+
+  <div class="list" id="list"></div>
+  <div class="footer" id="footerMsg"></div>
+</div>
+
+<script>
+(function(){
+  const LS_KEY = 'tinyWinsHabits';
+  const todayStr = () => new Date().toISOString().slice(0,10);
+
+  function load(){
+    try{
+      return JSON.parse(localStorage.getItem(LS_KEY)) || [];
+    }catch(e){ return []; }
+  }
+  function save(habits){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(habits)); }catch(e){}
+  }
+
+  let habits = load();
+
+  document.getElementById('today').textContent = new Date().toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
+
+  function daysBetween(a,b){
+    return Math.round((new Date(b) - new Date(a)) / 86400000);
+  }
+
+  function currentStreak(h){
+    if(!h.log || h.log.length === 0) return 0;
+    const dates = new Set(h.log);
+    let streak = 0;
+    let cursor = new Date();
+    // if not done today, start counting from yesterday
+    if(!dates.has(todayStr())) cursor.setDate(cursor.getDate()-1);
+    while(true){
+      const ds = cursor.toISOString().slice(0,10);
+      if(dates.has(ds)){
+        streak++;
+        cursor.setDate(cursor.getDate()-1);
+      } else break;
+    }
+    return streak;
+  }
+
+  function render(){
+    const list = document.getElementById('list');
+    const footer = document.getElementById('footerMsg');
+    list.innerHTML = '';
+    if(habits.length === 0){
+      list.innerHTML = '<div class="empty">No habits yet — add one small thing above.</div>';
+      footer.textContent = '';
+      return;
+    }
+    const t = todayStr();
+    let doneCount = 0;
+    habits.forEach((h, i) => {
+      const done = h.log && h.log.includes(t);
+      if(done) doneCount++;
+      const streak = currentStreak(h);
+      const row = document.createElement('div');
+      row.className = 'habit' + (done ? ' done' : '');
+      row.innerHTML = `
+        <button class="check" aria-label="Mark ${h.name} done" data-i="${i}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </button>
+        <div class="info">
+          <div class="name">${h.name}</div>
+          <div class="streak">${streak > 0 ? streak + ' day streak' : 'no streak yet'}</div>
+        </div>
+        <button class="del" aria-label="Delete ${h.name}" data-i="${i}">&times;</button>
+      `;
+      list.appendChild(row);
+    });
+    footer.textContent = `${doneCount} of ${habits.length} done today`;
+  }
+
+  document.getElementById('list').addEventListener('click', (e) => {
+    const check = e.target.closest('.check');
+    const del = e.target.closest('.del');
+    if(check){
+      const i = +check.dataset.i;
+      const t = todayStr();
+      const h = habits[i];
+      h.log = h.log || [];
+      const idx = h.log.indexOf(t);
+      if(idx >= 0) h.log.splice(idx,1);
+      else h.log.push(t);
+      save(habits);
+      render();
+    }else if(del){
+      const i = +del.dataset.i;
+      habits.splice(i,1);
+      save(habits);
+      render();
+    }
+  });
+
+  function addHabit(){
+    const input = document.getElementById('newHabit');
+    const name = input.value.trim();
+    if(!name) return;
+    habits.push({ name, log: [] });
+    save(habits);
+    input.value = '';
+    render();
+  }
+
+  document.getElementById('addBtn').addEventListener('click', addHabit);
+  document.getElementById('newHabit').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') addHabit();
+  });
+
+  render();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
